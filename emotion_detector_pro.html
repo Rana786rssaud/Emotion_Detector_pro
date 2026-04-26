@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmotionAI — Aanya Pal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f7f7f5;
+  --surface:  #ffffff;
+  --panel:    #f0f0ee;
+  --border:   #e4e4e0;
+  --border2:  #d0d0cc;
+  --text:     #111110;
+  --sub:      #6b6b67;
+  --muted:    #a0a09a;
+  --ink:      #1a1a18;
+
+  --angry:    #d63b3b;
+  --disgust:  #1a9e6a;
+  --fear:     #7b5ea7;
+  --happy:    #d4900a;
+  --neutral:  #6b6b67;
+  --sad:      #2c6fb5;
+  --surprised:#c4527a;
+
+  --r: 16px;
+  --r-sm: 10px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+}
+
+/* ─── NAV ─── */
+nav {
+  border-bottom: 1px solid var(--border);
+  background: rgba(247,247,245,0.88);
+  backdrop-filter: blur(12px);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo {
+  width: 28px; height: 28px;
+  background: var(--ink);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.nav-logo svg { width: 14px; height: 14px; }
+
+.nav-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.nav-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  letter-spacing: 0.04em;
+}
+
+/* ─── MAIN ─── */
+main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 0;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 32px;
+  align-items: start;
+}
+
+@media (max-width: 780px) {
+  main { grid-template-columns: 1fr; padding: 24px 16px; gap: 20px; }
+  nav { padding: 0 16px; }
+}
+
+/* ─── LEFT COLUMN ─── */
+.left { display: flex; flex-direction: column; gap: 16px; padding-right: 32px; }
+@media (max-width: 780px) { .left { padding-right: 0; } }
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.page-sub {
+  font-size: 14px;
+  color: var(--sub);
+  line-height: 1.6;
+  margin-top: -8px;
+  font-weight: 300;
+}
+
+/* Camera card */
+.cam-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+.cam-viewport {
+  position: relative;
+  background: #0c0c0e;
+  aspect-ratio: 4/3;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+/* scan line texture */
+.cam-viewport::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.cam-placeholder {
+  text-align: center;
+  z-index: 6;
+  position: relative;
+}
+
+.cam-placeholder-ring {
+  width: 72px; height: 72px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  position: relative;
+}
+
+.cam-placeholder-ring::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 50%;
+}
+
+.cam-placeholder-ring svg { opacity: 0.3; }
+
+.cam-placeholder h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 4px;
+}
+
+.cam-placeholder p {
+  font-size: 12px;
+  color: rgba(255,255,255,0.2);
+  font-family: 'DM Mono', monospace;
+}
+
+#videoEl {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: none;
+  transform: scaleX(-1);
+  z-index: 4;
+}
+
+#canvasEl { display: none; }
+
+#previewEl {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: none;
+  z-index: 4;
+}
+
+/* HUD overlays */
+.hud-corner {
+  position: absolute;
+  width: 18px; height: 18px;
+  z-index: 7;
+  pointer-events: none;
+}
+.hud-corner.tl { top: 14px; left: 14px; border-top: 1.5px solid rgba(255,255,255,0.25); border-left: 1.5px solid rgba(255,255,255,0.25); }
+.hud-corner.tr { top: 14px; right: 14px; border-top: 1.5px solid rgba(255,255,255,0.25); border-right: 1.5px solid rgba(255,255,255,0.25); }
+.hud-corner.bl { bottom: 14px; left: 14px; border-bottom: 1.5px solid rgba(255,255,255,0.25); border-left: 1.5px solid rgba(255,255,255,0.25); }
+.hud-corner.br { bottom: 14px; right: 14px; border-bottom: 1.5px solid rgba(255,255,255,0.25); border-right: 1.5px solid rgba(255,255,255,0.25); }
+
+.live-pill {
+  position: absolute;
+  bottom: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 100px;
+  padding: 5px 12px;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em;
+  z-index: 8;
+}
+
+.live-pill.on { display: flex; }
+
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #3ddc84;
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+/* Toolbar */
+.cam-toolbar {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── BUTTONS ─── */
+.btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--panel);
+  border-color: var(--border2);
+}
+
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-dark {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.btn-dark:hover:not(:disabled) {
+  background: #2a2a27;
+  border-color: #2a2a27;
+}
+
+.btn-capture {
+  background: #1a1a18;
+  color: #fff;
+  border-color: #1a1a18;
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-capture:hover:not(:disabled) {
+  background: #2d2d2a;
+}
+
+/* Status */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.status-dot.ok   { background: #3ddc84; }
+.status-dot.err  { background: var(--angry); }
+.status-dot.busy { background: var(--happy); animation: blink 0.8s infinite; }
+
+#status {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--sub);
+}
+
+#status.error { color: var(--angry); }
+
+/* No face */
+.no-face {
+  margin: 0 16px 12px;
+  background: #fdf1f1;
+  border: 1px solid #f5c9c9;
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--angry);
+  font-family: 'DM Mono', monospace;
+  display: none;
+}
+
+.no-face.show { display: block; }
+
+/* Tip */
+.tip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.tip-row p {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  line-height: 1.7;
+}
+
+/* ─── RIGHT COLUMN ─── */
+.right { display: flex; flex-direction: column; gap: 14px; }
+
+/* Result panel */
+.result-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: none;
+  animation: fadeSlide 0.35s ease;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.result-panel.show { display: block; }
+
+/* Emotion hero */
+.result-hero {
+  padding: 24px 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-emoji-box {
+  width: 60px; height: 60px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.result-meta { flex: 1; min-width: 0; }
+
+.result-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+#emotionName {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+#emotionConf {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--sub);
+}
+
+/* Bars */
+.bars-section { padding: 18px 24px 20px; }
+
+.bars-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.bar-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--sub);
+  width: 68px;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  background: var(--panel);
+  border-radius: 100px;
+  height: 5px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.65s cubic-bezier(0.34, 1.26, 0.64, 1);
+}
+
+.bar-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Idle panel ─── */
+.idle-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.idle-top {
+  padding: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.idle-top h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.idle-top p {
+  font-size: 12px;
+  color: var(--sub);
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+.emotion-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.emotion-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.emotion-chip:nth-child(even) { border-right: none; }
+.emotion-chip:nth-last-child(-n+2) { border-bottom: none; }
+
+.chip-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chip-text {
+  font-size: 12px;
+  color: var(--sub);
+  font-weight: 400;
+}
+
+/* ─── About card ─── */
+.about-card {
+  background: var(--ink);
+  border-radius: var(--r);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-card h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: -0.01em;
+}
+
+.about-card p {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+.about-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.about-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 100px;
+  padding: 3px 9px;
+  letter-spacing: 0.04em;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+}
+
+.footer-left {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+.footer-right {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+@media (max-width: 780px) { footer { padding: 14px 16px; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">
+      <svg viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="4" stroke="white" stroke-width="1.5"/>
+        <path d="M8 2V1M8 15v-1M2 8H1M15 8h-1" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="nav-name">EmotionAI</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px"><span style="font-size:13px;font-weight:500;color:var(--ink)">Made by : <span style="color:#7c6aff">Aanya Pal</span></span><div class="nav-tag">face-api.js · v1.7.12</div></div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- LEFT -->
+  <div class="left">
+    <div>
+      <h1 class="page-title">Facial Emotion<br>Recognition</h1>
+      <p class="page-sub">Real-time emotion detection using on-device machine learning — no data leaves your browser.</p>
+    </div>
+
+    <div class="cam-card">
+      <!-- Viewport -->
+      <div class="cam-viewport" id="camBox">
+        <div class="hud-corner tl"></div>
+        <div class="hud-corner tr"></div>
+        <div class="hud-corner bl"></div>
+        <div class="hud-corner br"></div>
+
+        <div class="live-pill" id="liveBadge">
+          <div class="live-dot"></div>LIVE
+        </div>
+
+        <div class="cam-placeholder" id="placeholder">
+          <div class="cam-placeholder-ring">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <h3>Camera Inactive</h3>
+          <p>start to begin session</p>
+        </div>
+
+        <video id="videoEl" autoplay playsinline muted></video>
+        <canvas id="canvasEl"></canvas>
+        <img id="previewEl" alt="Captured" />
+      </div>
+
+      <!-- Toolbar -->
+      <div class="cam-toolbar">
+        <button class="btn btn-dark" id="btnStart" onclick="startCamera()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+          Start Camera
+        </button>
+        <button class="btn btn-capture" id="btnCapture" onclick="capturePhoto()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M20.94 13A9 9 0 1 1 11 3.06"/></svg>
+          Capture &amp; Analyze
+        </button>
+        <button class="btn" id="btnRetry" onclick="retryCamera()" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Retry
+        </button>
+      </div>
+
+      <!-- Status -->
+      <div class="status-row">
+        <div class="status-dot" id="statusDot"></div>
+        <div id="status">Click "Start Camera" and allow camera permission when prompted</div>
+      </div>
+
+      <!-- No face -->
+      <div class="no-face" id="noFace">
+        ⚠ No face detected — look directly at the camera with adequate lighting
+      </div>
+
+      <!-- Tip -->
+      <div class="tip-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a0a09a" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p>Best results: good lighting, face the camera directly, stay 30–60 cm away.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+
+    <!-- Result (hidden until detection) -->
+    <div class="result-panel" id="resultCard">
+      <div class="result-hero">
+        <div class="result-emoji-box" id="emotionEmoji">—</div>
+        <div class="result-meta">
+          <div class="result-eyebrow">Detected Emotion</div>
+          <div id="emotionName">—</div>
+          <div id="emotionConf"></div>
+        </div>
+      </div>
+      <div class="bars-section">
+        <div class="bars-eyebrow">Confidence Breakdown</div>
+        <div id="barsContainer"></div>
+      </div>
+    </div>
+
+    <!-- Idle info -->
+    <div class="idle-panel" id="idlePanel">
+      <div class="idle-top">
+        <h3>7 Emotion Classes</h3>
+        <p>The model classifies facial expressions into seven universal emotions identified across human cultures.</p>
+      </div>
+      <div class="emotion-grid">
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--angry)"></div><span class="chip-text">Angry</span></div>
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--disgust)"></div><span class="chip-text">Disgusted</span></div>
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--fear)"></div><span class="chip-text">Fearful</span></div>
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--happy)"></div><span class="chip-text">Happy</span></div>
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--neutral)"></div><span class="chip-text">Neutral</span></div>
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--sad)"></div><span class="chip-text">Sad</span></div>
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--surprised)"></div><span class="chip-text">Surprised</span></div>
+        <div class="emotion-chip"><div class="chip-dot" style="background:var(--border2)"></div><span class="chip-text">+ more</span></div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="about-card">
+      <h4>About this project</h4>
+      <p>Built using face-api.js running entirely in the browser. No images are uploaded or stored — all inference happens on your device.</p>
+      <div class="about-pills">
+        <span class="about-pill">face-api.js</span>
+        <span class="about-pill">TinyFaceDetector</span>
+        <span class="about-pill">FaceExpressionNet</span>
+        <span class="about-pill">WebRTC</span>
+        <span class="about-pill">Canvas API</span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-left">Made by Aanya Pal</span>
+  <span class="footer-right">EmotionAI · face-api.js</span>
+</footer>
+
+<!-- ── ORIGINAL LOGIC (untouched) ── -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js"></script>
+<script>
+const EMOTIONS = ['angry','disgusted','fearful','happy','neutral','sad','surprised'];
+const LABELS   = ['Angry','Disgust','Fear','Happy','Neutral','Sad','Surprised'];
+const COLORS   = ['#d63b3b','#1a9e6a','#7b5ea7','#d4900a','#6b6b67','#2c6fb5','#c4527a'];
+const EMOJIS   = ['😠','🤢','😨','😄','😐','😢','😲'];
+
+let stream = null;
+let modelsLoaded = false;
+
+const video       = document.getElementById('videoEl');
+const canvas      = document.getElementById('canvasEl');
+const preview     = document.getElementById('previewEl');
+const statusEl    = document.getElementById('status');
+const statusDot   = document.getElementById('statusDot');
+const btnStart    = document.getElementById('btnStart');
+const btnCapture  = document.getElementById('btnCapture');
+const btnRetry    = document.getElementById('btnRetry');
+const placeholder = document.getElementById('placeholder');
+const resultCard  = document.getElementById('resultCard');
+const idlePanel   = document.getElementById('idlePanel');
+const noFace      = document.getElementById('noFace');
+const liveBadge   = document.getElementById('liveBadge');
+
+function setStatus(msg, state) {
+  statusEl.textContent = msg;
+  statusEl.className = state === 'error' ? 'error' : '';
+  statusDot.className = 'status-dot' + (state === 'ok' ? ' ok' : state === 'error' ? ' err' : state === 'busy' ? ' busy' : '');
+}
+
+async function loadModels() {
+  setStatus('Loading AI models...', 'busy');
+  const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+  try {
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+    modelsLoaded = true;
+    setStatus('Models ready — capture your photo.', 'ok');
+  } catch(e) {
+    setStatus('Model load failed: ' + e.message, 'error');
+  }
+}
+
+async function startCamera() {
+  btnStart.disabled = true;
+  setStatus('Opening camera...', 'busy');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}});
+    video.srcObject = stream;
+    placeholder.style.display = 'none';
+    video.style.display = 'block';
+    liveBadge.classList.add('on');
+    btnCapture.disabled = false;
+    btnStart.style.display = 'none';
+    btnRetry.style.display = 'inline-flex';
+    resultCard.classList.remove('show');
+    noFace.classList.remove('show');
+    preview.style.display = 'none';
+    if (!modelsLoaded) {
+      await loadModels();
+    } else {
+      setStatus('Camera ready — click Capture & Analyze.', 'ok');
+    }
+  } catch(e) {
+    btnStart.disabled = false;
+    setStatus('Camera error: ' + e.message, 'error');
+  }
+}
+
+function retryCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.style.display = 'none';
+  preview.style.display = 'none';
+  placeholder.style.display = 'flex';
+  liveBadge.classList.remove('on');
+  btnStart.style.display = 'inline-flex';
+  btnStart.disabled = false;
+  btnRetry.style.display = 'none';
+  btnCapture.disabled = true;
+  resultCard.classList.remove('show');
+  idlePanel.style.display = 'block';
+  noFace.classList.remove('show');
+  setStatus('Click "Start Camera" and allow camera permission when prompted', '');
+}
+
+async function capturePhoto() {
+  if (!modelsLoaded) { setStatus('Models loading, please wait...', 'error'); return; }
+  btnCapture.disabled = true;
+  setStatus('Analyzing expression...', 'busy');
+  noFace.classList.remove('show');
+  resultCard.classList.remove('show');
+
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0);
+  ctx.restore();
+
+  preview.src = canvas.toDataURL('image/jpeg', 0.92);
+  video.style.display = 'none';
+  liveBadge.classList.remove('on');
+  preview.style.display = 'block';
+
+  try {
+    const detections = await faceapi
+      .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions({inputSize:320, scoreThreshold:0.4}))
+      .withFaceExpressions();
+
+    if (!detections || detections.length === 0) {
+      noFace.classList.add('show');
+      setStatus('No face detected. Try again.', 'error');
+      btnCapture.disabled = false;
+      return;
+    }
+
+    const exp    = detections[0].expressions;
+    const sorted = Object.entries(exp).sort((a,b) => b[1]-a[1]);
+    const topEmo = sorted[0][0];
+    const topConf = sorted[0][1];
+    const idx    = EMOTIONS.indexOf(topEmo);
+    const label  = idx >= 0 ? LABELS[idx] : topEmo;
+    const color  = COLORS[idx] || '#111110';
+    const emoji  = EMOJIS[idx] || '😐';
+
+    document.getElementById('emotionEmoji').textContent = emoji;
+    document.getElementById('emotionName').textContent  = label;
+    document.getElementById('emotionName').style.color  = color;
+    document.getElementById('emotionConf').textContent  = Math.round(topConf * 100) + '% confidence';
+
+    const barsEl = document.getElementById('barsContainer');
+    barsEl.innerHTML = '';
+    sorted.forEach(([emo, prob]) => {
+      const i    = EMOTIONS.indexOf(emo);
+      const lbl  = i >= 0 ? LABELS[i] : emo;
+      const clr  = COLORS[i] || '#6b6b67';
+      const pct  = Math.round(prob * 100);
+      const row  = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML =
+        '<span class="bar-name">' + lbl + '</span>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + clr + '"></div></div>' +
+        '<span class="bar-pct">' + pct + '%</span>';
+      barsEl.appendChild(row);
+    });
+
+    idlePanel.style.display = 'none';
+    resultCard.classList.add('show');
+    setStatus('Analysis complete.', 'ok');
+    btnCapture.disabled = false;
+
+  } catch(e) {
+    setStatus('Detection error: ' + e.message, 'error');
+    btnCapture.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
